@@ -10,7 +10,7 @@ import (
 )
 
 type TorrentFile struct {
-	Annouce     string
+	Announce    string
 	InfoHash    [20]byte
 	PieceHashes [][20]byte
 	PieceLength int
@@ -26,8 +26,8 @@ type bencodeInfo struct {
 }
 
 type bencodeTorrent struct {
-	Annouce string      `bencode:"annouce"`
-	Info    bencodeInfo `bencode:"info"`
+	Announce string      `bencode:"announce"`
+	Info     bencodeInfo `bencode:"info"`
 }
 
 func Open(path string) (TorrentFile, error) {
@@ -82,7 +82,7 @@ func (b *bencodeTorrent) toTorrentFile() (TorrentFile, error) {
 	}
 
 	t := TorrentFile{
-		Annouce:     b.Annouce,
+		Announce:    b.Announce,
 		InfoHash:    infoHash,
 		PieceHashes: pieceHash,
 		PieceLength: b.Info.PiecesLength,

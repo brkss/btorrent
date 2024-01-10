@@ -15,9 +15,9 @@ func main() {
 	}
 	torrentPath := os.Args[1]
 	//output := os.Args[2];
-	_, err := torrentfile.Open(torrentPath)
+	tf, err := torrentfile.Open(torrentPath)
 	if err != nil {
 		log.Fatal(fmt.Sprintf("Invalid Torrent File : %s\n %s", torrentPath, err))
 	}
-
+	fmt.Printf("announce : %s", tf.Announce)
 }
