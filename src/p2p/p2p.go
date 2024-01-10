@@ -21,8 +21,9 @@ type Torrent struct {
 }
 
 type pieceWork struct {
-	index int
-	buf   []byte
+	index  int
+	hash   [20]byte
+	length int
 }
 
 type pieceProgress struct {

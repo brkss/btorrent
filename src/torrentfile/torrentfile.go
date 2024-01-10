@@ -30,6 +30,10 @@ type bencodeTorrent struct {
 	Info     bencodeInfo `bencode:"info"`
 }
 
+func DownloadToFile(path string) error {
+
+}
+
 func Open(path string) (TorrentFile, error) {
 	file, err := os.Open(path)
 	if err != nil {
