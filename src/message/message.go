@@ -90,7 +90,7 @@ func ParseHave(msg *Message) (int, error) {
 // <length prefix><message ID><payload>
 // Interepets nil as Keep-Alive message
 
-func Serialize(message *Message) []byte {
+func (message *Message) Serialize() []byte {
 	if message == nil {
 		return make([]byte, 4)
 	}
