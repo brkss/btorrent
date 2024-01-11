@@ -44,7 +44,7 @@ func Read(r io.Reader) (*Handshake, error) {
 	}
 	pstrlen := int(lengthBuf[0])
 	if pstrlen == 0 {
-		return nil, fmt.Errorf("Pstr Length cannot be 0")
+		return nil, fmt.Errorf("Disconnecting..")
 	}
 	handshakeBuff := make([]byte, pstrlen+49)
 	_, err = io.ReadFull(r, handshakeBuff)

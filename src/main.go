@@ -14,10 +14,13 @@ func main() {
 		return
 	}
 	torrentPath := os.Args[1]
-	//output := os.Args[2];
+	output := os.Args[2]
 	tf, err := torrentfile.Open(torrentPath)
 	if err != nil {
 		log.Fatal(fmt.Sprintf("Invalid Torrent File : %s\n %s", torrentPath, err))
 	}
-	fmt.Printf("announce : %s", tf.Announce)
+	err = tf.DownloadToFile(output)
+	if err != nil {
+		log.Fatal(err)
+	}
 }

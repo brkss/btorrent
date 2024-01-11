@@ -5,6 +5,7 @@ import (
 	"crypto/sha1"
 	"fmt"
 	"log"
+	"runtime"
 	"time"
 
 	"github.com/brkss/btorrent/src/client"
@@ -127,7 +128,7 @@ func checkIntergrity(pw *pieceWork, buf []byte) error {
 func (t *Torrent) startDownloaderWorker(peer peer.Peer, workQueue chan *pieceWork, results chan *pieceResult) {
 	c, err := client.New(peer, t.PeerID, t.InfoHash)
 	if err != nil {
-		log.Printf("could not handshake with client %s, Disconnecting \n", peer.IP)
+		log.Printf("could not handshake with client %s, Disconnecting... \n", peer.IP)
 		return
 	}
 
@@ -156,8 +157,57 @@ func (t *Torrent) startDownloaderWorker(peer peer.Peer, workQueue chan *pieceWor
 			workQueue <- pw
 			continue
 		}
-
 		c.SendHave(pw.index)
 		results <- &pieceResult{pw.index, buf}
 	}
+}
+
+func (t *Torrent) calculateBoundsForPeice(index int) (begin, end int) {
+	begin = index * t.PieceLength
+	end = begin + t.PieceLength
+	if end > t.PieceLength {
+		end = t.PieceLength
+	}
+	return begin, end
+}
+
+func (t *Torrent) calculatePieceSize(index int) int {
+	begin, end := t.calculateBoundsForPeice(index)
+	return end - begin
+}
+
+// Downloads downloads the torrent , it store the whole file in memory !
+func (t *Torrent) Download() ([]byte, error) {
+	log.Printf("Start downloading: %s\n", t.Name)
+
+	workQueue := make(chan *pieceWork, len(t.PieceHashes))
+	result := make(chan *pieceResult)
+
+	for index, hash := range t.PieceHashes {
+		length := t.calculatePieceSize(index)
+		workQueue <- &pieceWork{index, hash, length}
+	}
+
+	// run threads to start downloading torrent
+	for _, peer := range t.Peers {
+		go t.startDownloaderWorker(peer, workQueue, result)
+	}
+
+	// collect result into buffer untill full !
+	buf := make([]byte, t.Length)
+	donePieces := 0
+	for donePieces < len(t.PieceHashes) {
+		res := <-result
+		begin, end := t.calculateBoundsForPeice(res.index)
+		copy(buf[begin:end], res.buf[:])
+		donePieces++
+
+		percent := float64(donePieces) / float64(len(t.InfoHash)) * 100
+		numWorkers := runtime.NumGoroutine() - 1
+		log.Printf("(%0.2f%%) Downloaded piece #%d from %d peers\n", percent, res.index, numWorkers)
+	}
+
+	close(workQueue)
+	return buf, nil
+
 }
