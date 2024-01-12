@@ -24,14 +24,13 @@ func New(infoHash, peerID [20]byte) *Handshake {
 // Serialize  serializes the handshake to a buffer into this form
 // <pstr length> <8 bytes to indicate extensions support> <info hash> <peer id> <==== buffer
 func (h *Handshake) Serialize() []byte {
-	pstrLen := len(h.Pstr)
-	bufLen := pstrLen + 49
-	buf := make([]byte, bufLen)
-	buf[0] = byte(pstrLen)
-	copy(buf[1:], []byte(h.Pstr))
-	// 8 reserved bytes to indicate extension support !
-	copy(buf[1+pstrLen+8:], h.InfoHash[:])
-	copy(buf[1+pstrLen+8+20:], h.PeerID[:])
+	buf := make([]byte, len(h.Pstr)+49)
+	buf[0] = byte(len(h.Pstr))
+	curr := 1
+	curr += copy(buf[curr:], h.Pstr)
+	curr += copy(buf[curr:], make([]byte, 8)) // 8 reserved bytes
+	curr += copy(buf[curr:], h.InfoHash[:])
+	curr += copy(buf[curr:], h.PeerID[:])
 	return buf
 }
 
@@ -39,9 +38,11 @@ func (h *Handshake) Serialize() []byte {
 func Read(r io.Reader) (*Handshake, error) {
 	lengthBuf := make([]byte, 1)
 	_, err := io.ReadFull(r, lengthBuf)
+
 	if err != nil {
 		return nil, err
 	}
+
 	pstrlen := int(lengthBuf[0])
 	if pstrlen == 0 {
 		return nil, fmt.Errorf("Disconnecting..")
@@ -56,9 +57,10 @@ func Read(r io.Reader) (*Handshake, error) {
 	copy(peerID[:], handshakeBuff[1+pstrlen+8+20:])
 
 	h := &Handshake{
-		Pstr:     string(handshakeBuff[1:pstrlen]),
+		Pstr:     string(handshakeBuff[0:pstrlen]),
 		InfoHash: infoHash,
 		PeerID:   peerID,
 	}
+
 	return h, nil
 }

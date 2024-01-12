@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/rand"
 	"crypto/sha1"
+	"encoding/hex"
 	"fmt"
 	"os"
 
@@ -103,20 +104,23 @@ func (b *bencodeInfo) hash() ([20]byte, error) {
 func (b *bencodeInfo) splitPieceHash() ([][20]byte, error) {
 	hashlen := 20
 	buf := []byte(b.Pieces)
+
 	if len(buf)%hashlen != 0 {
 		err := fmt.Errorf("Recieved malformed pieces of length %d", len(buf))
 		return nil, err
 	}
-	numHashes := len(buf) % hashlen
+	numHashes := len(buf) / hashlen
 	hashes := make([][20]byte, numHashes)
 	for i := 0; i < numHashes; i++ {
 		copy(hashes[i][:], buf[(i*hashlen):(i+1)*hashlen])
 	}
+	fmt.Println("hashes length : ", len(hashes))
 	return hashes, nil
 }
 
 func (b *bencodeTorrent) toTorrentFile() (TorrentFile, error) {
 	infoHash, err := b.Info.hash()
+	fmt.Println("hash : ", string(hex.EncodeToString(infoHash[:])))
 	if err != nil {
 		return TorrentFile{}, err
 	}

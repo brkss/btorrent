@@ -133,6 +133,7 @@ func (t *Torrent) startDownloaderWorker(peer peer.Peer, workQueue chan *pieceWor
 	}
 
 	defer c.Conn.Close()
+
 	log.Printf("Complete handshake successfuly with client %s\n", peer.IP)
 
 	c.SendUnchoke()
@@ -188,26 +189,29 @@ func (t *Torrent) Download() ([]byte, error) {
 		workQueue <- &pieceWork{index, hash, length}
 	}
 
+	//fmt.Println("iterating on peers count : ", len(t.Peers))
 	// run threads to start downloading torrent
 	for _, peer := range t.Peers {
+		log.Println("-> Start download thread : ", peer.String())
 		go t.startDownloaderWorker(peer, workQueue, result)
 	}
-
+	fmt.Println("pieces : ", len(t.PieceHashes))
 	// collect result into buffer untill full !
 	buf := make([]byte, t.Length)
 	donePieces := 0
+
 	for donePieces < len(t.PieceHashes) {
 		res := <-result
 		begin, end := t.calculateBoundsForPeice(res.index)
 		copy(buf[begin:end], res.buf[:])
 		donePieces++
 
-		percent := float64(donePieces) / float64(len(t.InfoHash)) * 100
+		percent := float64(donePieces) / float64(len(t.PieceHashes)) * 100
 		numWorkers := runtime.NumGoroutine() - 1
 		log.Printf("(%0.2f%%) Downloaded piece #%d from %d peers\n", percent, res.index, numWorkers)
 	}
 
 	close(workQueue)
+	fmt.Println("returning from Download()?")
 	return buf, nil
-
 }

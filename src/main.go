@@ -21,6 +21,6 @@ func main() {
 	}
 	err = tf.DownloadToFile(output)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("fatal: downloading file : ", err)
 	}
 }
