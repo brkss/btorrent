@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"crypto/rand"
 	"crypto/sha1"
-	"encoding/hex"
 	"fmt"
 	"os"
 
@@ -118,25 +117,22 @@ func (b *bencodeInfo) splitPieceHash() ([][20]byte, error) {
 	return hashes, nil
 }
 
-func (b *bencodeTorrent) toTorrentFile() (TorrentFile, error) {
-	infoHash, err := b.Info.hash()
-	fmt.Println("hash : ", string(hex.EncodeToString(infoHash[:])))
+func (bto *bencodeTorrent) toTorrentFile() (TorrentFile, error) {
+	infoHash, err := bto.Info.hash()
 	if err != nil {
 		return TorrentFile{}, err
 	}
-
-	pieceHash, err := b.Info.splitPieceHash()
+	pieceHashes, err := bto.Info.splitPieceHash()
 	if err != nil {
-		return TorrentFile{}, nil
+		return TorrentFile{}, err
 	}
-
 	t := TorrentFile{
-		Announce:    b.Announce,
+		Announce:    bto.Announce,
 		InfoHash:    infoHash,
-		PieceHashes: pieceHash,
-		PieceLength: b.Info.PiecesLength,
-		Length:      b.Info.Length,
-		Name:        b.Info.Name,
+		PieceHashes: pieceHashes,
+		PieceLength: bto.Info.PiecesLength,
+		Length:      bto.Info.Length,
+		Name:        bto.Info.Name,
 	}
 	return t, nil
 }

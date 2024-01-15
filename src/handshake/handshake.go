@@ -47,20 +47,20 @@ func Read(r io.Reader) (*Handshake, error) {
 	if pstrlen == 0 {
 		return nil, fmt.Errorf("Disconnecting..")
 	}
-	handshakeBuff := make([]byte, pstrlen+49)
+	handshakeBuff := make([]byte, pstrlen+48)
 	_, err = io.ReadFull(r, handshakeBuff)
 	if err != nil {
 		return nil, err
 	}
 	var infoHash, peerID [20]byte
 	copy(infoHash[:], handshakeBuff[pstrlen+8:pstrlen+8+20])
-	copy(peerID[:], handshakeBuff[1+pstrlen+8+20:])
+	copy(peerID[:], handshakeBuff[pstrlen+8+20:])
 
-	h := &Handshake{
+	h := Handshake{
 		Pstr:     string(handshakeBuff[0:pstrlen]),
 		InfoHash: infoHash,
 		PeerID:   peerID,
 	}
 
-	return h, nil
+	return &h, nil
 }

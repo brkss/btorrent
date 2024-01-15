@@ -101,7 +101,7 @@ func attemptDownloadPiece(c *client.Client, pw *pieceWork) ([]byte, error) {
 				if pw.length-state.requested < blockSize {
 					blockSize = pw.length - state.requested
 				}
-				err := c.SendReuqest(state.index, state.requested, blockSize)
+				err := c.SendRequest(state.index, state.requested, blockSize)
 				if err != nil {
 					return nil, err
 				}
@@ -128,6 +128,7 @@ func checkIntergrity(pw *pieceWork, buf []byte) error {
 func (t *Torrent) startDownloaderWorker(peer peer.Peer, workQueue chan *pieceWork, results chan *pieceResult) {
 	c, err := client.New(peer, t.PeerID, t.InfoHash)
 	if err != nil {
+		//log.Println("err: ", err)
 		log.Printf("could not handshake with client %s, Disconnecting... \n", peer.IP)
 		return
 	}
@@ -137,7 +138,7 @@ func (t *Torrent) startDownloaderWorker(peer peer.Peer, workQueue chan *pieceWor
 	log.Printf("Complete handshake successfuly with client %s\n", peer.IP)
 
 	c.SendUnchoke()
-	c.SendIntrested()
+	c.SendInterested()
 
 	for pw := range workQueue {
 		if !c.Bitfield.HasPiece(pw.index) {
@@ -192,14 +193,12 @@ func (t *Torrent) Download() ([]byte, error) {
 	//fmt.Println("iterating on peers count : ", len(t.Peers))
 	// run threads to start downloading torrent
 	for _, peer := range t.Peers {
-		log.Println("-> Start download thread : ", peer.String())
 		go t.startDownloaderWorker(peer, workQueue, result)
 	}
 	fmt.Println("pieces : ", len(t.PieceHashes))
 	// collect result into buffer untill full !
 	buf := make([]byte, t.Length)
 	donePieces := 0
-
 	for donePieces < len(t.PieceHashes) {
 		res := <-result
 		begin, end := t.calculateBoundsForPeice(res.index)

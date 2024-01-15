@@ -50,6 +50,10 @@ func recvBitfield(conn net.Conn) (bitfield.Bitfield, error) {
 	if err != nil {
 		return nil, err
 	}
+	if msg == nil {
+		err := fmt.Errorf("Expected bitfield but got %s", msg)
+		return nil, err
+	}
 	if msg.ID != message.MsgBitfield {
 		return nil, fmt.Errorf("expected a message bitfield but got : %d", msg.ID)
 	}
@@ -62,16 +66,18 @@ func recvBitfield(conn net.Conn) (bitfield.Bitfield, error) {
 func New(peer peer.Peer, peerID, infoHash [20]byte) (*Client, error) {
 	conn, err := net.DialTimeout("tcp", peer.String(), time.Second*3)
 	if err != nil {
-
+		fmt.Println(">> got error init connection : ", err, peer.String())
 		return nil, err
 	}
 	_, err = completeHandshake(conn, infoHash, peerID)
 	if err != nil {
+		fmt.Println(">> got error complete handshake : ", err, peer.String())
 		return nil, err
 	}
 
 	bitfield, err := recvBitfield(conn)
 	if err != nil {
+		fmt.Println(">> got error recieving bitfield : ", err, peer.String())
 		return nil, err
 	}
 
@@ -93,7 +99,7 @@ func (c *Client) Read() (*message.Message, error) {
 }
 
 // SendRequest send requect to client in the current connection
-func (c *Client) SendReuqest(index, begin, length int) error {
+func (c *Client) SendRequest(index, begin, length int) error {
 	req := message.FormatRequest(length, index, begin)
 	_, err := c.Conn.Write(req.Serialize())
 
@@ -101,14 +107,14 @@ func (c *Client) SendReuqest(index, begin, length int) error {
 }
 
 // SendIntrested sends an Intresseted message to a peer
-func (c *Client) SendIntrested() error {
+func (c *Client) SendInterested() error {
 	msg := message.Message{ID: message.MsgInterested}
 	_, err := c.Conn.Write(msg.Serialize())
 	return err
 }
 
 // SendNotIntrested sends an not intrested message to a peer
-func (c *Client) SendNotIntrested() error {
+func (c *Client) SendNotInterested() error {
 	msg := message.Message{ID: message.MsgNotInterested}
 	_, err := c.Conn.Write(msg.Serialize())
 	return err
